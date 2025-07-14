@@ -1,0 +1,30 @@
+body {
+    text-align: center;
+}
+
+#board{
+    background-color: black;
+}
+
+#reset {
+    background-color: cornflowerblue;
+    color: white;
+    font-size: 16px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-top: 10px;
+}
+
+#reset:hover {
+    background-color: royalblue;
+    transform: scale(1.05);
+}
+
+#reset:active {
+    background-color: midnightblue;
+    transform: scale(0.98);
+}
