@@ -6,6 +6,7 @@ const tileSize = 32;
 const boardWidth = columnCount*tileSize;
 const boardHeight = rowCount*tileSize;
 let context;
+let bestScore;
 
 //images
 let blueGhostImage;
@@ -23,21 +24,21 @@ let cherryImage;
 //Ghosts: b = blue, o = orange, p = pink, r = red
 const tileMap = [
     "XXXXXXXXXXXXXXXXXXX",
-    "Xc       X        X",
+    "X        X       cX",
     "X XX XXX X XXX XX X",
-    "X                 X",
+    "X   i         i   X",
     "X XX X XXXXX X XX X",
-    "X    X       X    X",
+    "X    Xc      X    X",
     "XXXX XXXX XXXX XXXX",
-    "OOOX X      cX XOOO",
+    "OOOX X       X XOOO",
     "XXXX X XXrXX X XXXX",
-    "O       bpo       O",
+    "O   i   bpo   i   O",
     "XXXX X XXXXX X XXXX",
     "OOOX X       X XOOO",
     "XXXX X XXXXX X XXXX",
-    "X        X        X",
+    "X   i    X    i   X",
     "X XX XXX X XXX XX X",
-    "X cX     P     X  X",
+    "Xc X     P     X  X",
     "XX X X XXXXX X X XX",
     "X    X   X   X    X",
     "X XXXXXX X XXXXXX X",
@@ -49,6 +50,7 @@ const walls = new Set();
 const foods = new Set();
 const ghosts = new Set();
 const cherries = new Set();
+const hiddenWalls = new Set();
 let pacman;
 
 const directions = ['U', 'D', 'R', 'L'];
@@ -62,6 +64,8 @@ window.onload = function(){
     board.height = boardHeight;
     board.width = boardWidth;
     context = board.getContext("2d");
+    bestScore = localStorage.getItem("bestScore") || 0;
+    bestScore = parseInt(bestScore);
 
     loadImages();
     loadMap();
@@ -108,6 +112,7 @@ function loadMap(){
     foods.clear();
     ghosts.clear();
     cherries.clear();
+    hiddenWalls.clear();
 
     for(let r = 0; r < rowCount; r++){
         for(let c = 0; c < columnCount; c++){
@@ -148,6 +153,12 @@ function loadMap(){
                 const cherry = new Block(cherryImage, x, y, tileSize, tileSize);
                 cherries.add(cherry);
             }
+            else if (tileMapChar == "i"){
+                const food = new Block(null, x+14, y+14, 4, 4);
+                foods.add(food);
+                const wall = new Block(null, x, y, tileSize, tileSize);
+                hiddenWalls.add(wall);
+            }
         }
     }
 }
@@ -182,10 +193,9 @@ function draw(){
     context.fillStyle = 'white';
     context.font = "14px sans-serif";
     if(gameOver){
-        context.fillText("Game Over: "+ String(score), tileSize/2, tileSize/2);
-    }
-    else {
-        context.fillText("x" + String(lives) + " "+ String(score), tileSize/2, tileSize/2);
+        context.fillText("Game Over: " + String(score) + "    Best Score: " + String(bestScore), tileSize/2, tileSize/2);
+    } else {
+        context.fillText("x" + lives + "   " + String(score)+ "    Best Score: " + String(bestScore), tileSize/2, tileSize/2);
     }
 }
 
@@ -229,6 +239,14 @@ function move(){
         ghost.x += ghost.velocityX;
         ghost.y += ghost.velocityY;
         for (let wall of walls.values()){
+            if(collision(ghost, wall)||ghost.x <= 0 || ghost.x + ghost.width >= boardWidth){
+                ghost.x -= ghost.velocityX;
+                ghost.y -= ghost.velocityY;
+                const newDirection = directions[Math.floor(Math.random()*4)];
+                ghost.updateDirection(newDirection);
+            }
+        }
+        for (let wall of hiddenWalls.values()){
             if(collision(ghost, wall)||ghost.x <= 0 || ghost.x + ghost.width >= boardWidth){
                 ghost.x -= ghost.velocityX;
                 ghost.y -= ghost.velocityY;
@@ -300,12 +318,17 @@ function movePacman(e){
 }
 
 function resetGame(){
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem("bestScore", bestScore);
+    }
     loadMap();
     resetPositions();
     lives = 3;        
     score = 0;
     gameOver = false;
 }
+
 
 function collision(a, b){
     return a.x < b.x + b.width &&
